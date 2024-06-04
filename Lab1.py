@@ -5,51 +5,108 @@ BLACK_STONE_NUMBER = 1
 WHITE_STONE_NUMBER = 2
 
 def check_horizontal(board, row, col, color):
+    if(col + WINNING_LENGTH > ROW_LENGTH):
+      return 0, None
     count = 1
     for i in range(1, WINNING_LENGTH):
-        if col + i < COL_LENGTH and board[row][col + i] == color:
-            count += 1
-        else:
-            break
+        if col + i >= COL_LENGTH or board[row][col + i] != color:
+            break;
+        count+=1
+
     if count == WINNING_LENGTH:
-        if (col + WINNING_LENGTH < COL_LENGTH and board[row][col + WINNING_LENGTH] == color) or (col > 0 and board[row][col - 1] == color):
-            return 0, None  # More than five consecutive stones
+      has_right_extra_stone = (
+        col + WINNING_LENGTH < COL_LENGTH and 
+        board[row][col + WINNING_LENGTH] == color
+      )
+    
+      has_left_extra_stone = (
+        col > 0 and 
+        board[row][col - 1] == color
+      )
+    
+      if has_right_extra_stone or has_left_extra_stone:
+        return 0, None
+
     return count, (row, col)
 
 def check_vertical(board, row, col, color):
+    if(row + WINNING_LENGTH > ROW_LENGTH):
+      return 0, None
     count = 1
     for i in range(1, WINNING_LENGTH):
-        if row + i < ROW_LENGTH and board[row + i][col] == color:
-            count += 1
-        else:
-            break
+        if row + i >= ROW_LENGTH or board[row + i][col] != color:
+            break;
+        count += 1
+
     if count == WINNING_LENGTH:
-        if (row + WINNING_LENGTH < ROW_LENGTH and board[row + WINNING_LENGTH][col] == color) or (row > 0 and board[row - 1][col] == color):
-            return 0, None  # More than five consecutive stones
+
+      has_bottom_extra_stone = (
+        row + WINNING_LENGTH < ROW_LENGTH and 
+        board[row + WINNING_LENGTH][col] == color
+      )
+    
+      has_top_extra_stone = (
+        row > 0 and 
+        board[row - 1][col] == color
+      )
+    
+      if has_bottom_extra_stone or has_top_extra_stone:
+        return 0, None
+
     return count, (row, col)
 
 def check_diagonal_top_left_bottom_right(board, row, col, color):
+    if(row + WINNING_LENGTH > ROW_LENGTH or col + WINNING_LENGTH > ROW_LENGTH):
+      return 0, None
     count = 1
     for i in range(1, WINNING_LENGTH):
-        if row + i < ROW_LENGTH and col + i < COL_LENGTH and board[row + i][col + i] == color:
-            count += 1
-        else:
-            break
+        if row + i >= ROW_LENGTH or col + i >= COL_LENGTH or board[row + i][col + i] != color:
+            break;
+        count += 1
     if count == WINNING_LENGTH:
-        if (row + WINNING_LENGTH < ROW_LENGTH and col + WINNING_LENGTH < COL_LENGTH and board[row + WINNING_LENGTH][col + WINNING_LENGTH] == color) or (row > 0 and col > 0 and board[row - 1][col - 1] == color):
-            return 0, None  # More than five consecutive stones
+
+      has_bottom_right_extra_stone = (
+        row + WINNING_LENGTH < ROW_LENGTH and 
+        col + WINNING_LENGTH < COL_LENGTH and 
+        board[row + WINNING_LENGTH][col + WINNING_LENGTH] == color
+      )
+    
+      has_top_left_extra_stone = (
+        row > 0 and 
+        col > 0 and 
+        board[row - 1][col - 1] == color
+      )
+    
+      if has_bottom_right_extra_stone or has_top_left_extra_stone:
+        return 0, None
     return count, (row, col)
 
 def check_diagonal_bottom_left_top_right(board, row, col, color):
+    if(row + WINNING_LENGTH > ROW_LENGTH or col - WINNING_LENGTH < -1):
+      return 0, None
     count = 1
+
     for i in range(1, WINNING_LENGTH):
-        if row + i < ROW_LENGTH and col - i >= 0 and board[row + i][col - i] == color:
-            count += 1
-        else:
-            break
+        if row + i >= ROW_LENGTH or col - i < 0 or board[row + i][col - i] != color:
+            break;
+        count += 1
+
     if count == WINNING_LENGTH:
-        if (row + WINNING_LENGTH < ROW_LENGTH and col - WINNING_LENGTH >= 0 and board[row + WINNING_LENGTH][col - WINNING_LENGTH] == color) or (row > 0 and col < COL_LENGTH - 1 and board[row - 1][col + 1] == color):
-            return 0, None  # More than five consecutive stones
+      has_bottom_left_extra_stone = (
+        row + WINNING_LENGTH < ROW_LENGTH and 
+        col - WINNING_LENGTH >= 0 and 
+        board[row + WINNING_LENGTH][col - WINNING_LENGTH] == color
+      )
+    
+      has_top_right_extra_stone = (
+        row > 0 and 
+        col < COL_LENGTH - 1 and 
+        board[row - 1][col + 1] == color
+      )
+    
+      if has_bottom_left_extra_stone or has_top_right_extra_stone:
+        return 0, None
+        
     return count, (row + (count - 1), col - (count - 1))
 
 def check_winning_lane(board, row, col):
@@ -80,9 +137,16 @@ def main():
                 return
             for num_test_cases in range(count):
                 array = []
-                for line in range(19):
+                for line in range(ROW_LENGTH):
                     row = [int(num) for num in file.readline().strip()]
                     array.append(row)
+                # Validate board size
+                if len(array) != ROW_LENGTH or any(len(row) != ROW_LENGTH for row in array):
+                    print('Wrong game`s field size')
+                    return
+                if any(cell not in [0, 1, 2] for row in array for cell in row):
+                    print('Invalid value in the game field')
+                    return
                 winner, win_pos = check_winner(array)
                 print(winner)
                 if winner != 0:
@@ -91,7 +155,7 @@ def main():
         print('Wrong input file')
         return
     except IndexError:
-        print('Wrong game`s field size ')
+        print('Wrong game`s field size')
         return
 
 if __name__ == "__main__":
