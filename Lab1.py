@@ -1,119 +1,95 @@
+from abc import ABC, abstractmethod
+
 ROW_LENGTH = 19
 COL_LENGTH = 19
 WINNING_LENGTH = 5
 BLACK_STONE_NUMBER = 1
 WHITE_STONE_NUMBER = 2
 
-def check_horizontal(board, row, col, color):
-    if(col + WINNING_LENGTH > ROW_LENGTH):
-      return 0, None
+class DirectionChecker(ABC):
+    @abstractmethod
+    def is_cell_eligible(self, board, row, col, color, index):
+        pass
+
+    @abstractmethod
+    def are_border_cells_same_colour(self, board, row, col, color):
+        pass
+
+    @abstractmethod
+    def get_position(self, row, col):
+        pass
+
+class HorizontalChecker(DirectionChecker):
+    def is_cell_eligible(self, board, row, col, color, index):
+        return col + index < COL_LENGTH and board[row][col + index] == color
+
+    def are_border_cells_same_colour(self, board, row, col, color):
+        has_right_extra_stone = col + WINNING_LENGTH < COL_LENGTH and board[row][col + WINNING_LENGTH] == color
+        has_left_extra_stone = col > 0 and board[row][col - 1] == color
+        return has_right_extra_stone or has_left_extra_stone
+
+    def get_position(self, row, col):
+        return row, col
+
+class VerticalChecker(DirectionChecker):
+    def is_cell_eligible(self, board, row, col, color, index):
+        return row + index < ROW_LENGTH and board[row + index][col] == color
+
+    def are_border_cells_same_colour(self, board, row, col, color):
+        has_bottom_extra_stone = row + WINNING_LENGTH < ROW_LENGTH and board[row + WINNING_LENGTH][col] == color
+        has_top_extra_stone = row > 0 and board[row - 1][col] == color
+        return has_bottom_extra_stone or has_top_extra_stone
+
+    def get_position(self, row, col):
+        return row, col
+
+class DiagonalTopLeftBottomRightChecker(DirectionChecker):
+    def is_cell_eligible(self, board, row, col, color, index):
+        return row + index < ROW_LENGTH and col + index < COL_LENGTH and board[row + index][col + index] == color
+
+    def are_border_cells_same_colour(self, board, row, col, color):
+        has_bottom_right_extra_stone = row + WINNING_LENGTH < ROW_LENGTH and col + WINNING_LENGTH < COL_LENGTH and board[row + WINNING_LENGTH][col + WINNING_LENGTH] == color
+        has_top_left_extra_stone = row > 0 and col > 0 and board[row - 1][col - 1] == color
+        return has_bottom_right_extra_stone or has_top_left_extra_stone
+
+    def get_position(self, row, col):
+        return row, col
+
+class DiagonalBottomLeftTopRightChecker(DirectionChecker):
+    def is_cell_eligible(self, board, row, col, color, index):
+        return row + index < ROW_LENGTH and col - index >= 0 and board[row + index][col - index] == color
+
+    def are_border_cells_same_colour(self, board, row, col, color):
+        has_bottom_left_extra_stone = row + WINNING_LENGTH < ROW_LENGTH and col - WINNING_LENGTH >= 0 and board[row + WINNING_LENGTH][col - WINNING_LENGTH] == color
+        has_top_right_extra_stone = row > 0 and col < COL_LENGTH - 1 and board[row - 1][col + 1] == color
+        return has_bottom_left_extra_stone or has_top_right_extra_stone
+
+    def get_position(self, row, col):
+        return row + (WINNING_LENGTH - 1), col - (WINNING_LENGTH - 1)
+
+def check_generic(board, row, col, color, checker):
     count = 1
     for i in range(1, WINNING_LENGTH):
-        if col + i >= COL_LENGTH or board[row][col + i] != color:
-            break;
-        count+=1
-
+        if checker.is_cell_eligible(board, row, col, color, i):
+            count += 1
+        else:
+            break
     if count == WINNING_LENGTH:
-      has_right_extra_stone = (
-        col + WINNING_LENGTH < COL_LENGTH and 
-        board[row][col + WINNING_LENGTH] == color
-      )
-    
-      has_left_extra_stone = (
-        col > 0 and 
-        board[row][col - 1] == color
-      )
-    
-      if has_right_extra_stone or has_left_extra_stone:
-        return 0, None
-
-    return count, (row, col)
-
-def check_vertical(board, row, col, color):
-    if(row + WINNING_LENGTH > ROW_LENGTH):
-      return 0, None
-    count = 1
-    for i in range(1, WINNING_LENGTH):
-        if row + i >= ROW_LENGTH or board[row + i][col] != color:
-            break;
-        count += 1
-
-    if count == WINNING_LENGTH:
-
-      has_bottom_extra_stone = (
-        row + WINNING_LENGTH < ROW_LENGTH and 
-        board[row + WINNING_LENGTH][col] == color
-      )
-    
-      has_top_extra_stone = (
-        row > 0 and 
-        board[row - 1][col] == color
-      )
-    
-      if has_bottom_extra_stone or has_top_extra_stone:
-        return 0, None
-
-    return count, (row, col)
-
-def check_diagonal_top_left_bottom_right(board, row, col, color):
-    if(row + WINNING_LENGTH > ROW_LENGTH or col + WINNING_LENGTH > ROW_LENGTH):
-      return 0, None
-    count = 1
-    for i in range(1, WINNING_LENGTH):
-        if row + i >= ROW_LENGTH or col + i >= COL_LENGTH or board[row + i][col + i] != color:
-            break;
-        count += 1
-    if count == WINNING_LENGTH:
-
-      has_bottom_right_extra_stone = (
-        row + WINNING_LENGTH < ROW_LENGTH and 
-        col + WINNING_LENGTH < COL_LENGTH and 
-        board[row + WINNING_LENGTH][col + WINNING_LENGTH] == color
-      )
-    
-      has_top_left_extra_stone = (
-        row > 0 and 
-        col > 0 and 
-        board[row - 1][col - 1] == color
-      )
-    
-      if has_bottom_right_extra_stone or has_top_left_extra_stone:
-        return 0, None
-    return count, (row, col)
-
-def check_diagonal_bottom_left_top_right(board, row, col, color):
-    if(row + WINNING_LENGTH > ROW_LENGTH or col - WINNING_LENGTH < -1):
-      return 0, None
-    count = 1
-
-    for i in range(1, WINNING_LENGTH):
-        if row + i >= ROW_LENGTH or col - i < 0 or board[row + i][col - i] != color:
-            break;
-        count += 1
-
-    if count == WINNING_LENGTH:
-      has_bottom_left_extra_stone = (
-        row + WINNING_LENGTH < ROW_LENGTH and 
-        col - WINNING_LENGTH >= 0 and 
-        board[row + WINNING_LENGTH][col - WINNING_LENGTH] == color
-      )
-    
-      has_top_right_extra_stone = (
-        row > 0 and 
-        col < COL_LENGTH - 1 and 
-        board[row - 1][col + 1] == color
-      )
-    
-      if has_bottom_left_extra_stone or has_top_right_extra_stone:
-        return 0, None
-        
-    return count, (row + (count - 1), col - (count - 1))
+        if checker.are_border_cells_same_colour(board, row, col, color):
+            return 0, None
+    return count, checker.get_position(row, col)
 
 def check_winning_lane(board, row, col):
     color = board[row][col]
+    checkers = [
+        HorizontalChecker(),
+        VerticalChecker(),
+        DiagonalTopLeftBottomRightChecker(),
+        DiagonalBottomLeftTopRightChecker()
+    ]
 
-    for check in [check_horizontal, check_vertical, check_diagonal_top_left_bottom_right, check_diagonal_bottom_left_top_right]:
-        count, start_pos = check(board, row, col, color)
+    for checker in checkers:
+        count, start_pos = check_generic(board, row, col, color, checker)
         if count == WINNING_LENGTH:
             return True, start_pos
 
